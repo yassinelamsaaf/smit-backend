@@ -1,2 +1,22 @@
-## Deprecated - migrated to application.properties
-# This file is intentionally left minimal. Use application.properties instead.
+## Spring Cloud Stream configuration (easier in YAML format)
+## Other configuration remains in application.properties
+
+spring:
+  cloud:
+    function:
+      definition: paymentConsumer
+    stream:
+      bindings:
+        # Producer binding (for sending payment events)
+        paymentProducer-out-0:
+          destination: bank-payment-queue
+          content-type: application/json
+        # Consumer binding (for receiving payment events)
+        paymentConsumer-in-0:
+          destination: bank-payment-queue
+          content-type: application/json
+          group: smet-payment-group
+      kafka:
+        binder:
+          brokers: localhost:9092
+          auto-create-topics: true
