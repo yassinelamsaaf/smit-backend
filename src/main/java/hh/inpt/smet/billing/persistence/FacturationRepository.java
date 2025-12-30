@@ -7,4 +7,6 @@ import hh.inpt.smet.billing.model.Facturation;
 @Repository
 public interface FacturationRepository extends JpaRepository<Facturation, Long> {
 
+    java.util.List<Facturation> findByStatutPaiement(String statutPaiement);
+
 }

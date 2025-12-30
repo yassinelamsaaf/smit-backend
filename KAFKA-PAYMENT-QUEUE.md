@@ -22,7 +22,11 @@ Send to Kafka Stream ──→ Status: QUEUED
         ↓
 PaymentStreamConsumer
         ↓
-   [Retry Processing]
+   [Bank Enabled?]
+        ↓
+    YES ──→ Process + Retry (max 3)
+        ↓
+    NO ──→ Skip (remains QUEUED)
         ↓
 Success ──→ Status: PAID
 Fail ──→ Retry (max 3) ──→ Status: FAILED
@@ -126,12 +130,13 @@ POST /api/factures/{{factureId}}/pay
 - Status: `PENDING` → `PAID`
 - No Kafka message sent
 
-**Scenario 2: Bank Unavailable (30% chance)**
+**Scenario 2: Bank Unavailable**
 - Payment sent to Kafka queue
 - Status: `PENDING` → `QUEUED`
-- Consumer processes asynchronously
+- Consumer skips processing while the bank is disabled
+- When the bank is enabled, queued invoices are re-sent and processed
 - On success: `QUEUED` → `PAID`
-- On failure: Retries up to 3 times → `FAILED`
+- On failure (while enabled): Retries up to 3 times → `FAILED`
 
 ### Monitoring Logs
 
@@ -167,9 +172,9 @@ private BankService bankService;
 // Disable bank service
 bankService.setBankAvailable(false);
 
-// Now all payments will go to Kafka queue
+// Now all payments will go to Kafka queue and remain QUEUED
 
-// Re-enable bank service
+// Re-enable bank service (queued invoices are re-sent to Kafka)
 bankService.setBankAvailable(true);
 ```
 

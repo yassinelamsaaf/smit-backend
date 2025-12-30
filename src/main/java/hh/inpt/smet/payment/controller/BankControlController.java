@@ -1,6 +1,7 @@
 package hh.inpt.smet.payment.controller;
 
 import hh.inpt.smet.payment.service.BankService;
+import hh.inpt.smet.billing.service.FacturationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,9 +15,11 @@ import java.util.Map;
 public class BankControlController {
 
     private final BankService bankService;
+    private final FacturationService facturationService;
 
-    public BankControlController(BankService bankService) {
+    public BankControlController(BankService bankService, FacturationService facturationService) {
         this.bankService = bankService;
+        this.facturationService = facturationService;
     }
 
     /**
@@ -40,9 +43,11 @@ public class BankControlController {
     @PostMapping("/enable")
     public ResponseEntity<Map<String, Object>> enableBank() {
         bankService.setBankAvailable(true);
+        int requeuedCount = facturationService.requeueQueuedBankPayments();
         return ResponseEntity.ok(Map.of(
             "bankAvailable", true,
-            "message", "Bank service ENABLED - payments will succeed directly"
+            "requeuedCount", requeuedCount,
+            "message", "Bank service ENABLED - queued payments were re-sent to Kafka"
         ));
     }
 
@@ -67,10 +72,12 @@ public class BankControlController {
     public ResponseEntity<Map<String, Object>> toggleBank() {
         boolean newStatus = !bankService.getBankAvailable();
         bankService.setBankAvailable(newStatus);
+        int requeuedCount = newStatus ? facturationService.requeueQueuedBankPayments() : 0;
         return ResponseEntity.ok(Map.of(
             "bankAvailable", newStatus,
+            "requeuedCount", requeuedCount,
             "message", newStatus ?
-                "Bank service ENABLED - payments will succeed directly" :
+                "Bank service ENABLED - queued payments were re-sent to Kafka" :
                 "Bank service DISABLED - payments will be queued to Kafka"
         ));
     }

@@ -101,4 +101,31 @@ public class FacturationService {
             return repo.save(f);
         }
     }
+
+    @Transactional
+    public int requeueQueuedBankPayments() {
+        List<Facturation> queuedFactures = repo.findByStatutPaiement("QUEUED");
+        int requeuedCount = 0;
+
+        for (Facturation facture : queuedFactures) {
+            PaymentMethod paymentMethod = facture.getPaymentMethod();
+            if (!(paymentMethod instanceof BankAccount)) {
+                continue;
+            }
+
+            PaymentEvent event = PaymentEvent.builder()
+                .factureId(facture.getId())
+                .paymentMethodId(paymentMethod.getId())
+                .paymentType("BANK")
+                .amount(facture.getMontantTotal())
+                .touristeId(facture.getTouristeId())
+                .retryCount(0)
+                .build();
+
+            streamProducer.sendPaymentEvent(event);
+            requeuedCount++;
+        }
+
+        return requeuedCount;
+    }
 }

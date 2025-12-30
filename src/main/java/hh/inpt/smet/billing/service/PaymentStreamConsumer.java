@@ -54,6 +54,12 @@ public class PaymentStreamConsumer {
                    event.getFactureId(), event.getRetryCount());
 
         try {
+            if (!bankService.getBankAvailable()) {
+                logger.warn("Bank is disabled. Skipping stream processing for factureId={}.",
+                           event.getFactureId());
+                return;
+            }
+
             // Retrieve facture
             Facturation facture = facturationRepository.findById(event.getFactureId())
                 .orElseThrow(() -> new RuntimeException("Facture not found: " + event.getFactureId()));
