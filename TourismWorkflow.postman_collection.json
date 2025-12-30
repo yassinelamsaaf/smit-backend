@@ -1,0 +1,221 @@
+{
+  "info": {
+    "name": "Tourism Management System Workflow",
+    "description": "Postman collection for testing the hotel reservation workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "factureId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentMethodId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Register Tourist",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\":\"tourist22\",\n  \"email\":\"t22@example.com\",\n  \"password\":\"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "2. Login Tourist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('token', response.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"tourist22\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "3. Set Hotel Preferences",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nbEtoilesMin\": 3,\n  \"preferredCity\": \"Rabat\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/profiles/me/preferences",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "profiles", "me", "preferences"]
+        }
+      }
+    },
+    {
+      "name": "4. Add Bank Payment Method",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('paymentMethodId', response.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estParDefaut\": true,\n  \"iban\": \"DE89 3704 0044 0532 0130 00\",\n  \"bic\": \"COBADEFFXXX\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/profiles/me/payments/bank",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "profiles", "me", "payments", "bank"]
+        }
+      }
+    },
+    {
+      "name": "5. List Available Hotels",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/hotels/available",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "hotels", "available"]
+        }
+      }
+    },
+    {
+      "name": "6. Create Reservation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('factureId', response.factureId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hotelId\": 101,\n  \"dateDebut\": \"2025-12-30T14:00:00Z\",\n  \"dateFin\": \"2026-01-02T11:00:00Z\",\n  \"paymentMethodId\": {{paymentMethodId}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/hotels/reserve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "hotels", "reserve"]
+        }
+      }
+    },
+    {
+      "name": "7. Pay Facture",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/factures/{{factureId}}/pay",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "factures", "{{factureId}}", "pay"]
+        }
+      }
+    }
+  ]
+}
